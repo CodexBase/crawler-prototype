@@ -1,8 +1,11 @@
 # TODO LIST
 [x] Learning Technology
 [ ] Writing/Building of a prototype (web crawler)
-	[ ] Using of an user agent
-	[ ] Getting the content of the website
-	[ ] Getting url present inside
-	[ ] Removing of url already crawl or not belong the website
-	[ ] Crawling of the urls
+	[x] Using of an user agent
+	[x] Getting the content of the website
+	[x] Getting url present inside
+	[x] Removing of url already crawl or not belong the website
+	[x] Crawling of the urls
+	[x] Delay to simulate human activity
+	[ ] Respect of robots.txt
+	[ ] Fix problem of UnicodeDecodeError
