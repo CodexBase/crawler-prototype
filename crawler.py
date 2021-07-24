@@ -7,6 +7,7 @@ from urllib.parse import urlparse, urlunparse
 from time import sleep, time
 from random import randint
 from argparse import ArgumentParser
+import json
 
 class Crawler:
 	"""
@@ -150,6 +151,10 @@ class Crawler:
 				self.getContent()
 				self.results[self.url] = self.getData()
 				self.getUrlLinks()
+
+		# We save the data parse
+		with open(str(time())+'.json', 'w') as f:
+			json.dump(self.results, f)
 
 if __name__ == '__main__':
 	parser = ArgumentParser()

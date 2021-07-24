@@ -12,3 +12,4 @@
 	- [ ] Fix problem of UnicodeDecodeError
 	- [ ] Add the threading
 	- [X] Add possibility to execute on the shell
+	- [ ] Fix problem of redirection and others http code (code 302, ...)
