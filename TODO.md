@@ -8,4 +8,6 @@
 	- [x] Crawling of the urls
 	- [x] Delay to simulate human activity
 	- [ ] Respect of robots.txt
+	- [X] Fix problem of building url in getUrlLinks
 	- [ ] Fix problem of UnicodeDecodeError
+	- [ ] Add the threading

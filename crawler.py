@@ -3,7 +3,7 @@
 
 import urllib3
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 from time import sleep, time
 from random import randint
 
@@ -48,6 +48,7 @@ class Crawler:
 			self.content = ''
 			print('[WARNING] Timeout exceed for %s, no content got' % self.url, file=self.logstream)
 			return
+		
 		# We verify if the request has succeed
 		if r.status != 200:
 			if r.status == 404:
@@ -73,40 +74,55 @@ class Crawler:
 		for i in self.HTML_TAG_REGEX.findall(self.content):
 			url = urlparse(i[1])
 			#print(self.url, i[1], url)
-			# scheme://netloc... (root path)
 			
+			# scheme://netloc... (root path)
 			# We verify the structure of the url and if it is valid
+			# eg: http://exemple.com/a/b/c
 			if url.scheme:
 				
 				if url.netloc == self.host:
-					self.url_to_crawl.append('/' + url.path + url.query)
+					self.url_to_crawl.append('/' + url.path + '')
 				else:
 					print('[DEBUG] %s not belong %s...' % (i[1], self.host), file=self.logstream)
 			# path
+			# eg: /a/b/c
 			else:
 				
 				# //path (root path)
+				# eg: //a/b/c
 				if url.netloc:
-					self.url_to_crawl.append('/' + url.netloc + url.path + url.query)
+					# We build and add the url
+					self.url_to_crawl.append(urlunparse(['', '', '/' + url.netloc + url.path, '', '', '']))
 				else:
 					
 					# /path (root path)
+					# eg: /a/b/c
 					if url.path.startswith('/'):
-						self.url_to_crawl.append(url.path + url.query)
+						# We build and add the url
+						self.url_to_crawl.append(urlunparse(['', '', url.path, '', '', '']))
 					# path (sub path)
+					# eg: a/b/c
 					else:
 						_path = urlparse(self.url).path
 						
+						# a/b/c/
 						if _path.endswith('/'):
-							self.url_to_crawl.append(_path + url.path + url.query)
+							# We build and add the url
+							self.url_to_crawl.append(urlunparse(['', '', _path + url.path, '', '', '']))
+						# a/b/c
 						else:
 
 							# We verify if it is not a file
-							if '.' not in _path:
-								self.url_to_crawl.append(_path + '/' + url.path + url.query)
+							# a/b/c.d
+							if '.' in _path:
+								# We remove the filename part
+								_path = '/'.join(_path.split('/')[:-1])
+							# a/b/c
 							else:
-								# TEMPORARY SOLUTION
-								print('[WARNING] %s ignored ...' % (_path + '/' + url.path + url.query), file=self.logstream)
+								pass
+
+							# We build and add the url
+							self.url_to_crawl.append(urlunparse(['', '', _path + '/' + url.path, '', '', '']))
 
 	# This method permit to get the text in the webpage
 	def getData(self):
