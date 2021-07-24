@@ -6,6 +6,7 @@ import re
 from urllib.parse import urlparse, urlunparse
 from time import sleep, time
 from random import randint
+from argparse import ArgumentParser
 
 class Crawler:
 	"""
@@ -36,6 +37,7 @@ class Crawler:
 		self.timeout = timeout
 		# Output file of the logging
 		self.logstream = open('%s.log' % time(), 'a')
+		self.logstream.write('HOST: %s\n' % self.host)
 		self.results = {}
 
 	# This method permit to get the content of a webpage
@@ -150,4 +152,14 @@ class Crawler:
 				self.getUrlLinks()
 
 if __name__ == '__main__':
-	Crawler("http://localhost:8000/", lambda:1).start()
+	parser = ArgumentParser()
+	parser.add_argument('HOST', help='Eg: http://example.com')
+	parser.add_argument('-t', '--timeout', type=int, default=3600)
+	parser.add_argument('-n', '--min_delay', type=int, default=1)
+	parser.add_argument('-x', '--max_delay', type=int, default=5)
+	args = parser.parse_args()
+	Crawler(
+		args.HOST,
+		delay_func=lambda:sleep(randint(args.min_delay, args.max_delay)),
+		timeout=args.timeout,
+	).start()

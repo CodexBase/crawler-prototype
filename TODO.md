@@ -11,3 +11,4 @@
 	- [X] Fix problem of building url in getUrlLinks
 	- [ ] Fix problem of UnicodeDecodeError
 	- [ ] Add the threading
+	- [X] Add possibility to execute on the shell
