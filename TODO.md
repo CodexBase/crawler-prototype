@@ -7,9 +7,9 @@
 	- [x] Removing of url already crawl or not belong the website
 	- [x] Crawling of the urls
 	- [x] Delay to simulate human activity
-	- [ ] Respect of robots.txt
+	- [x] Respect of robots.txt
 	- [X] Fix problem of building url in getUrlLinks
 	- [ ] Fix problem of UnicodeDecodeError
 	- [ ] Add the threading
 	- [X] Add possibility to execute on the shell
-	- [ ] Fix problem of redirection and others http code (code 302, ...)
+	- [X] Crawl of the website genetated with pydoc

@@ -8,13 +8,14 @@ from time import sleep, time
 from random import randint
 from argparse import ArgumentParser
 import json
+import urllib.robotparser
 
 class Crawler:
 	"""
 		:host the root of the website
 		:delay_func the function to call to simulate the human activity
 	"""
-	def __init__(self, host, delay_func=lambda:sleep(randint(0, 20)/10), timeout=3600):
+	def __init__(self, host, timeout=3600, delay=1):
 		# It represent the current webpage
 		self.url = '/'
 		# it represent the url to craw
@@ -26,13 +27,18 @@ class Crawler:
 		# We build a regular expression to get url link in a text
 		self.HTML_TAG_REGEX = re.compile(r'<a[^<>]+?href=([\'\"])(.*?)\1', re.IGNORECASE)
 		self.HTML_OUTER_REGEX = re.compile(r'>(.*?)<', re.IGNORECASE)
-		# We build the user agent
+		# W set the robotparser
+		self.ROBOT_PARSER = urllib.robotparser.RobotFileParser(urljoin(host, 'robots.txt'))
+		self.ROBOT_PARSER.read()
+		# We set the user agent
+		self.USER_AGENT = "Codexbot"
 		self.HEADERS = {
-			"User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; rv:74.0) Gecko/20100101 Firefox/74.0",
+			"User-Agent": self.USER_AGENT,
 			"Accept": "text/html",
 		}
 		#
-		self.wait = delay_func
+		self.delay = self.ROBOT_PARSER.crawl_delay(self.USER_AGENT)
+		self.wait = lambda:sleep(self.delay if self.delay else delay)
 		self.timeout = timeout
 		# Output file of the logging
 		self.logstream = open('%s.log' % time(), 'a')
@@ -48,25 +54,26 @@ class Crawler:
 		except urllib3.exceptions.MaxRetryError:
 			self.content = ''
 			print('[WARNING] Timeout exceed for %s, no content got' % self.url, file=self.logstream)
-			return
-		
-		# We verify if the request has succeed
-		if r.status != 200:
-			if r.status == 404:
-				print("[ERROR] [%s]: %s" % (r.status, self.url), file=self.logstream)
-			else:
-				raise Exception('CODE %s not managed' % r.status)
-		# We get only html text file less than 100kb
-		elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < 1024*100):
-			# We decode the response
-			try:
-				self.content = r.data.decode()
-			except UnicodeDecodeError:
-				print('[CRITICAL] Decoding of %s failed, type: %s' % (self.url, r.headers['Content-type']), file=self.logstream)
-
 		else:
-			print('[WARNING] Content of %s ignored %s' % (self.url, [r.headers['Content-type'], r.headers['Content-Length']]), file=self.logstream)
-			self.content = ''
+		
+			# We verify if the request has succeed
+			if r.status != 200:
+				if r.status == 404:
+					# It's possible that an URL catched not exists
+					print("[ERROR] [%s]: %s" % (r.status, self.url), file=self.logstream)
+				else:
+					raise Exception('CODE %s not managed' % r.status)
+			# We get only html text file less than 100kb
+			elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < 1024*100):
+				# We decode the response
+				try:
+					self.content = r.data.decode()
+				except UnicodeDecodeError:
+					print('[CRITICAL] Decoding of %s failed, type: %s' % (self.url, r.headers['Content-type']), file=self.logstream)
+
+			else:
+				print('[WARNING] Content of %s ignored %s' % (self.url, [r.headers['Content-type'], r.headers['Content-Length']]), file=self.logstream)
+				self.content = ''
 
 	# This method permit to get the url links present in the webpage
 	def getUrlLinks(self):
@@ -114,15 +121,17 @@ class Crawler:
 
 			# We get the first url
 			self.url = self.url_to_crawl.pop(0)
-			
 			if self.url in self.results:
 				continue
-			else:
+			# We verify if our robot can is allowed to fetch this url
+			elif self.ROBOT_PARSER.can_fetch(self.USER_AGENT, self.url):
 				#print(self.url)
 				print('[DEBUG] Crawling launched on %s ...' % self.url, file=self.logstream)
 				self.getContent()
 				self.results[self.url] = self.getData()
 				self.getUrlLinks()
+			else:
+				print("[WARNING] We aren't allowed to fetch the url %s" % self.url, file=self.logstream)
 
 		# We save the data parse
 		with open(str(time())+'.json', 'w') as f:
@@ -131,12 +140,11 @@ class Crawler:
 if __name__ == '__main__':
 	parser = ArgumentParser()
 	parser.add_argument('HOST', help='Eg: http://example.com')
-	parser.add_argument('-t', '--timeout', type=int, default=3600)
-	parser.add_argument('-n', '--min_delay', type=int, default=1)
-	parser.add_argument('-x', '--max_delay', type=int, default=5)
+	parser.add_argument('-t', type=int, default=3600, help='It represent the timeout')
+	parser.add_argument('-d', type=float, default=1, help='This delay will be used if no delay specified by the robots.txt')
 	args = parser.parse_args()
 	Crawler(
 		args.HOST,
-		delay_func=lambda:sleep(randint(args.min_delay, args.max_delay)),
-		timeout=args.timeout,
+		timeout=args.t,
+		delay=args.d,
 	).start()
