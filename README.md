@@ -58,3 +58,5 @@ We can use the HTTP request with the module **urllib3**.
 
 ### References
 https://www.mschweighauser.com/fast-url-parsing-with-python/
+https://moz.com/blog/interactive-guide-to-robots-txt
+https://docs.python.org/3/library/urllib.robotparser.html
