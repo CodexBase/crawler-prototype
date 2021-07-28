@@ -3,7 +3,7 @@
 
 import urllib3
 import re
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urljoin
 from time import sleep, time
 from random import randint
 from argparse import ArgumentParser
@@ -15,8 +15,6 @@ class Crawler:
 		:delay_func the function to call to simulate the human activity
 	"""
 	def __init__(self, host, delay_func=lambda:sleep(randint(0, 20)/10), timeout=3600):
-		# We get the host
-		self.host = urlparse(host).netloc
 		# It represent the current webpage
 		self.url = '/'
 		# it represent the url to craw
@@ -38,7 +36,7 @@ class Crawler:
 		self.timeout = timeout
 		# Output file of the logging
 		self.logstream = open('%s.log' % time(), 'a')
-		self.logstream.write('HOST: %s\n' % self.host)
+		self.logstream.write('HOST: %s\n' % self.conn.host)
 		self.results = {}
 
 	# This method permit to get the content of a webpage
@@ -83,10 +81,10 @@ class Crawler:
 			# eg: http://exemple.com/a/b/c
 			if url.scheme:
 				
-				if url.netloc == self.host:
-					self.url_to_crawl.append('/' + url.path + '')
+				if url.netloc == self.conn.host:
+					self.url_to_crawl.append(urljoin('/', url.path))
 				else:
-					print('[DEBUG] %s not belong %s...' % (i[1], self.host), file=self.logstream)
+					print('[DEBUG] %s not belong %s...' % (i[1], self.conn.host), file=self.logstream)
 			# path
 			# eg: /a/b/c
 			else:
@@ -95,37 +93,11 @@ class Crawler:
 				# eg: //a/b/c
 				if url.netloc:
 					# We build and add the url
-					self.url_to_crawl.append(urlunparse(['', '', '/' + url.netloc + url.path, '', '', '']))
+					self.url_to_crawl.append(urljoin('/' + url.netloc, url.path))
 				else:
-					
 					# /path (root path)
-					# eg: /a/b/c
-					if url.path.startswith('/'):
-						# We build and add the url
-						self.url_to_crawl.append(urlunparse(['', '', url.path, '', '', '']))
-					# path (sub path)
-					# eg: a/b/c
-					else:
-						_path = urlparse(self.url).path
-						
-						# a/b/c/
-						if _path.endswith('/'):
-							# We build and add the url
-							self.url_to_crawl.append(urlunparse(['', '', _path + url.path, '', '', '']))
-						# a/b/c
-						else:
-
-							# We verify if it is not a file
-							# a/b/c.d
-							if '.' in _path:
-								# We remove the filename part
-								_path = '/'.join(_path.split('/')[:-1])
-							# a/b/c
-							else:
-								pass
-
-							# We build and add the url
-							self.url_to_crawl.append(urlunparse(['', '', _path + '/' + url.path, '', '', '']))
+					# eg: /a/b/c a/b/c a/b/c.d
+					self.url_to_crawl.append(urljoin(self.url, url.path))
 
 	# This method permit to get the text in the webpage
 	def getData(self):
@@ -135,7 +107,7 @@ class Crawler:
 
 	# This method start the crawling
 	def start(self):
-		print('[INFO] Crawling launched of %s ...' % self.host, file=self.logstream)
+		print('[INFO] Crawling launched of %s ...' % self.conn.host, file=self.logstream)
 		
 		while self.url_to_crawl:
 			self.wait()
