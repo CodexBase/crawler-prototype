@@ -46,13 +46,13 @@ class Crawler:
 		self.logstream.write('HOST: %s\n' % self.conn.host)
 		self.results = {}
 
-	# This method permit to read the sitemap and get url inside
+	# This method permit to read the sitemaps and get the urls inside
 	def getUrlFromSiteMap(self):
 		for sitemap in self.ROBOT_PARSER.sitemaps:
 			r = self.conn.request('GET', urlparse(sitemap).path, preload_content=False, headers=self.HEADERS, timeout=self.timeout)
 			resp = r.read(self.MAX_SIZE_PER_PAGE, decode_content=True).decode()
 			for url in self.SITEMAP_TAG_REGEX.findall(resp):
-				self.url_to_crawl.append(url)
+				self.url_to_crawl.append(urlparse(url).path)
 
 	# This method permit to get the content of a webpage
 	def getContent(self):
@@ -125,9 +125,11 @@ class Crawler:
 	def start(self):
 		print('[INFO] Crawling launched of %s ...' % self.conn.host, file=self.logstream)
 		
+		print('[INFO] Reading of the robots.txt ...', file=self.logstream)
 		# We load the robots.txt
 		self.ROBOT_PARSER.read()
 
+		print('[INFO] Loading of the sitemaps ...', file=self.logstream)
 		# We read the sitemap if present in the robots.txt
 		self.getUrlFromSiteMap()
 		
@@ -136,11 +138,13 @@ class Crawler:
 
 			# We get the first url
 			self.url = self.url_to_crawl.pop(0)
-			if self.url in self.results:
+
+			# We verify if url not already used or not empty
+			if not self.url or self.url in self.results:
 				continue
 			# We verify if our robot can is allowed to fetch this url
 			elif self.ROBOT_PARSER.can_fetch(self.USER_AGENT, self.url):
-				#print(self.url)
+				print(self.url)
 				print('[DEBUG] Crawling launched on %s ...' % self.url, file=self.logstream)
 				self.getContent()
 				self.results[self.url] = self.getData()
