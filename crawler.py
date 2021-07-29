@@ -28,9 +28,9 @@ class Crawler:
 		# We build a regular expression to get url link in a text
 		self.HTML_TAG_REGEX = re.compile(r'<a[^<>]+?href=([\'\"])(.*?)\1', re.IGNORECASE)
 		self.HTML_OUTER_REGEX = re.compile(r'>(.*?)<', re.IGNORECASE)
-		# W set the robotparser
+		self.SITEMAP_TAG_REGEX = re.compile(r'<loc>(.*?)</loc>', re.IGNORECASE)
+		# We set the robotparser
 		self.ROBOT_PARSER = urllib.robotparser.RobotFileParser(urljoin(host, 'robots.txt'))
-		self.ROBOT_PARSER.read()
 		# We set the user agent
 		self.USER_AGENT = "Codexbot"
 		self.HEADERS = {
@@ -45,6 +45,14 @@ class Crawler:
 		self.logstream = open('%s.log' % time(), 'a')
 		self.logstream.write('HOST: %s\n' % self.conn.host)
 		self.results = {}
+
+	# This method permit to read the sitemap and get url inside
+	def getUrlFromSiteMap(self):
+		for sitemap in self.ROBOT_PARSER.sitemaps:
+			r = self.conn.request('GET', urlparse(sitemap).path, preload_content=False, headers=self.HEADERS, timeout=self.timeout)
+			resp = r.read(self.MAX_SIZE_PER_PAGE, decode_content=True).decode()
+			for url in self.SITEMAP_TAG_REGEX.findall(resp):
+				self.url_to_crawl.append(url)
 
 	# This method permit to get the content of a webpage
 	def getContent(self):
@@ -116,6 +124,12 @@ class Crawler:
 	# This method start the crawling
 	def start(self):
 		print('[INFO] Crawling launched of %s ...' % self.conn.host, file=self.logstream)
+		
+		# We load the robots.txt
+		self.ROBOT_PARSER.read()
+
+		# We read the sitemap if present in the robots.txt
+		self.getUrlFromSiteMap()
 		
 		while self.url_to_crawl:
 			self.wait()
