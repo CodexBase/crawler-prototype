@@ -71,7 +71,7 @@ class Crawler:
 					# It's possible that an URL catched not exists
 					print("[ERROR] [%s]: %s" % (r.status, self.url), file=self.logstream)
 				else:
-					raise Exception('CODE %s not managed' % r.status)
+					print('[CRITICAL] CODE %s not managed, %s' % (r.status, self.url), file=self.logstream)
 			# We get only html text file
 			elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < self.MAX_SIZE_PER_PAGE):
 				# We decode the response
@@ -97,7 +97,7 @@ class Crawler:
 			# eg: http://exemple.com/a/b/c
 			if url.scheme:
 				
-				if url.netloc == self.conn.host:
+				if url.netloc.replace('www.', '') == self.conn.host.replace('www.', ''):
 					self.url_to_crawl.append(urljoin('/', url.path))
 				else:
 					print('[DEBUG] %s not belong %s...' % (i[1], self.conn.host), file=self.logstream)
