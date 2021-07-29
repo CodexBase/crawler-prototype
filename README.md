@@ -51,6 +51,18 @@ We can use the HTTP request with the module **urllib3**.
 
 - Notes will be taken after each step in the plan like problems faced, solutions, etc...
 
+### Notes for indexing team
+
+	While the test of the crawling we have meet 
+
+- a problem of duplicate data with different url
+	https://example.com/mobile/87356/11:1/ and https://example.com/87356/11:1/
+	https://example.com/articles and https://example.com/articles?page=1
+- some empty data
+- some html (HTML 5 named and numerica character references)
+	(e.g. &gt;, &#62;,&x3e;)
+
+
 ### Developers
 
 - Fody @pythonbrad

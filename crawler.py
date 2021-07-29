@@ -98,7 +98,7 @@ class Crawler:
 			if url.scheme:
 				
 				if url.netloc.replace('www.', '') == self.conn.host.replace('www.', ''):
-					self.url_to_crawl.append(urljoin('/', url.path))
+					self.url_to_crawl.append(urljoin('/', url.path + '?' + url.query))
 				else:
 					print('[DEBUG] %s not belong %s...' % (i[1], self.conn.host), file=self.logstream)
 			# path
@@ -109,11 +109,11 @@ class Crawler:
 				# eg: //a/b/c
 				if url.netloc:
 					# We build and add the url
-					self.url_to_crawl.append(urljoin('/' + url.netloc, url.path))
+					self.url_to_crawl.append(urljoin('/' + url.netloc, url.path + '?' + url.query))
 				else:
 					# /path (root or sub path)
 					# eg: /a/b/c a/b/c a/b/c.d
-					self.url_to_crawl.append(urljoin(self.url, url.path))
+					self.url_to_crawl.append(urljoin(self.url, url.path + '?' + url.query))
 
 	# This method permit to get the text in the webpage
 	def getData(self):

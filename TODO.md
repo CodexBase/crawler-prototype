@@ -14,3 +14,4 @@
 	- [X] Add possibility to execute on the shell
 	- [X] Crawl of the website genetated with pydoc
 	- [X] Usage of the sitemaps
+	- [X] Take in charge of urls like http://example.com/article?page=2
