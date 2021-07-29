@@ -24,6 +24,7 @@ class Crawler:
 		self.conn = urllib3.connection_from_url(host)
 		# It represent the current data while the crawling
 		self.content = b''
+		self.MAX_SIZE_PER_PAGE = 1024*256 # 256Kb
 		# We build a regular expression to get url link in a text
 		self.HTML_TAG_REGEX = re.compile(r'<a[^<>]+?href=([\'\"])(.*?)\1', re.IGNORECASE)
 		self.HTML_OUTER_REGEX = re.compile(r'>(.*?)<', re.IGNORECASE)
@@ -63,11 +64,11 @@ class Crawler:
 					print("[ERROR] [%s]: %s" % (r.status, self.url), file=self.logstream)
 				else:
 					raise Exception('CODE %s not managed' % r.status)
-			# We get only html text file less than 100kb
-			elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < 1024*100):
+			# We get only html text file
+			elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < self.MAX_SIZE_PER_PAGE):
 				# We decode the response
 				try:
-					self.content = r.data.decode()
+					self.content = r.read(self.MAX_SIZE_PER_PAGE, decode_content=True).decode()
 				except UnicodeDecodeError:
 					print('[CRITICAL] Decoding of %s failed, type: %s' % (self.url, r.headers['Content-type']), file=self.logstream)
 
@@ -102,7 +103,7 @@ class Crawler:
 					# We build and add the url
 					self.url_to_crawl.append(urljoin('/' + url.netloc, url.path))
 				else:
-					# /path (root path)
+					# /path (root or sub path)
 					# eg: /a/b/c a/b/c a/b/c.d
 					self.url_to_crawl.append(urljoin(self.url, url.path))
 
