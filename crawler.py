@@ -57,12 +57,14 @@ class Crawler:
 	# This method permit to get the content of a webpage
 	def getContent(self):
 		print('[INFO] Getting content from %s ...' % self.url, file=self.logstream)
+		self.content = ''
 		
 		try:
 			r = self.conn.request('GET', self.url, preload_content=False, headers=self.HEADERS, timeout=self.timeout)
 		except urllib3.exceptions.MaxRetryError:
-			self.content = ''
 			print('[WARNING] Timeout exceed for %s, no content got' % self.url, file=self.logstream)
+		except urllib3.exceptions.HostChangedError:
+			print('[WARNING] Host Changed for %s, no content got' % self.url, file=self.logstream)
 		else:
 		
 			# We verify if the request has succeed
@@ -82,7 +84,6 @@ class Crawler:
 
 			else:
 				print('[WARNING] Content of %s ignored %s' % (self.url, [r.headers['Content-type'], r.headers['Content-Length']]), file=self.logstream)
-				self.content = ''
 
 	# This method permit to get the url links present in the webpage
 	def getUrlLinks(self):
