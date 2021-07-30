@@ -53,15 +53,17 @@ We can use the HTTP request with the module **urllib3**.
 
 ### Notes for indexing team
 
-	While the test of the crawling we have meet 
+	While the test of the crawling we have meet
 
 - a problem of duplicate data with different url
 	https://example.com/mobile/87356/11:1/ and https://example.com/87356/11:1/
 	https://example.com/articles and https://example.com/articles?page=1
+	https://example.com/news/ and https://example.com/news
 - some empty data
 - some html (HTML 5 named and numerica character references)
 	(e.g. &gt;, &#62;,&x3e;)
 
+	To preserve the speed of the crawling, we will not manage it.
 
 ### Developers
 

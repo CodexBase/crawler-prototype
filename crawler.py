@@ -62,9 +62,15 @@ class Crawler:
 		try:
 			r = self.conn.request('GET', self.url, preload_content=False, headers=self.HEADERS, timeout=self.timeout)
 		except urllib3.exceptions.MaxRetryError:
+			print('[WARNING] Max retry exceed for %s, no content got' % self.url, file=self.logstream)
+		except urllib3.exceptions.ReadTimeoutError:
 			print('[WARNING] Timeout exceed for %s, no content got' % self.url, file=self.logstream)
 		except urllib3.exceptions.HostChangedError:
 			print('[WARNING] Host Changed for %s, no content got' % self.url, file=self.logstream)
+		except urllib3.exceptions.ProtocolError:
+			print('[WARNING] Connection broken for %s, no content got' % self.url, file=self.logstream)
+		except Exception as e:
+			print('[ERROR] %s for %s' % (e, self.url), file=self.logstream)
 		else:
 		
 			# We verify if the request has succeed
