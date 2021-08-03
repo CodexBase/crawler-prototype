@@ -151,7 +151,7 @@ class Crawler:
 				continue
 			# We verify if our robot can is allowed to fetch this url
 			elif self.ROBOT_PARSER.can_fetch(self.USER_AGENT, self.url):
-				print(self.url)
+				print(len(self.url_to_crawl))
 				print('[DEBUG] Crawling launched on %s ...' % self.url, file=self.logstream)
 				self.getContent()
 				self.results[self.url] = self.getData()
