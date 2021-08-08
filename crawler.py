@@ -42,7 +42,7 @@ class Crawler:
 		self.wait = lambda:sleep(self.delay if self.delay else delay)
 		self.timeout = timeout
 		# Output file of the logging
-		self.logstream = open('%s.log' % time(), 'a')
+		self.logstream = open('%s_%s.log' % (self.conn.host, time()), 'a')
 		self.logstream.write('HOST: %s\n' % self.conn.host)
 		self.results = {}
 
