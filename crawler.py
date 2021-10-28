@@ -15,7 +15,7 @@ class Crawler:
 		:host the root of the website
 		:delay_func the function to call to simulate the human activity
 	"""
-	def __init__(self, host, timeout=3600, delay=1):
+	def __init__(self, host, timeout=10, delay=1):
 		# It represent the current webpage
 		self.url = '/'
 		# it represent the url to craw
@@ -166,7 +166,7 @@ class Crawler:
 if __name__ == '__main__':
 	parser = ArgumentParser()
 	parser.add_argument('HOST', help='Eg: http://example.com')
-	parser.add_argument('-t', type=int, default=3600, help='It represent the timeout')
+	parser.add_argument('-t', type=float, default=10, help='It represent the timeout')
 	parser.add_argument('-d', type=float, default=1, help='This delay will be used if no delay specified by the robots.txt')
 	args = parser.parse_args()
 	Crawler(
