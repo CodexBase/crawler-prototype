@@ -15,7 +15,7 @@ class Crawler:
 		:host the root of the website
 		:delay_func the function to call to simulate the human activity
 	"""
-	def __init__(self, host, timeout=10, delay=1):
+	def __init__(self, host, timeout, delay):
 		# It represent the current webpage
 		self.url = '/'
 		# it represent the url to craw
@@ -72,7 +72,8 @@ class Crawler:
 		except Exception as e:
 			print('[ERROR] %s for %s' % (e, self.url), file=self.logstream)
 		else:
-		
+			content_length = r.headers.get('Content-Length', 0)
+			content_type = r.headers.get('Content-type', "unknowed")
 			# We verify if the request has succeed
 			if r.status != 200:
 				if r.status == 404:
@@ -80,16 +81,18 @@ class Crawler:
 					print("[ERROR] [%s]: %s" % (r.status, self.url), file=self.logstream)
 				else:
 					print('[CRITICAL] CODE %s not managed, %s' % (r.status, self.url), file=self.logstream)
-			# We get only html text file
-			elif r.headers['Content-type'].startswith('text/html') and (('Content-Length' not in r.headers) or int(r.headers['Content-Length']) < self.MAX_SIZE_PER_PAGE):
+			# We get only text file
+			elif content_type.startswith('text/') and int(content_length) < self.MAX_SIZE_PER_PAGE:
 				# We decode the response
 				try:
 					self.content = r.read(self.MAX_SIZE_PER_PAGE, decode_content=True).decode()
+				except urllib3.exceptions.ReadTimeoutError:
+					print("[WARNING] Read timed out for %s" % self.url, file=self.logstream)
 				except UnicodeDecodeError:
-					print('[CRITICAL] Decoding of %s failed, type: %s' % (self.url, r.headers['Content-type']), file=self.logstream)
+					print('[CRITICAL] Decoding of %s failed, type: %s' % (self.url, content_type), file=self.logstream)
 
 			else:
-				print('[WARNING] Content of %s ignored %s' % (self.url, [r.headers['Content-type'], r.headers['Content-Length']]), file=self.logstream)
+				print('[WARNING] Content of %s ignored %s' % (self.url, [content_type, content_length]), file=self.logstream)
 
 	# This method permit to get the url links present in the webpage
 	def getUrlLinks(self):
@@ -126,7 +129,7 @@ class Crawler:
 	def getData(self):
 		print('[INFO] Getting data from %s ...' % self.url, file=self.logstream)
 		
-		return self.HTML_OUTER_REGEX.findall(self.content)
+		return self.content
 
 	# This method start the crawling
 	def start(self):
@@ -134,11 +137,18 @@ class Crawler:
 		
 		print('[INFO] Reading of the robots.txt ...', file=self.logstream)
 		# We load the robots.txt
-		self.ROBOT_PARSER.read()
+		try:
+			self.ROBOT_PARSER.read()
+		except urllib.error.URLError:
+			print('[ERROR] Failed to read the robots.txt', file=self.logstream)
+			return
 
 		print('[INFO] Loading of the sitemaps ...', file=self.logstream)
 		# We read the sitemap if present in the robots.txt
-		self.getUrlFromSiteMap()
+		try:
+			self.getUrlFromSiteMap()
+		except urllib3.exceptions.ReadTimeoutError:
+			print("[WARNING] ReadTimeoutError while the getting of url from sitemap", file=self.logstream)
 		
 		while self.url_to_crawl:
 			self.wait()
@@ -151,7 +161,6 @@ class Crawler:
 				continue
 			# We verify if our robot can is allowed to fetch this url
 			elif self.ROBOT_PARSER.can_fetch(self.USER_AGENT, self.url):
-				print(len(self.url_to_crawl))
 				print('[DEBUG] Crawling launched on %s ...' % self.url, file=self.logstream)
 				self.getContent()
 				self.results[self.url] = self.getData()
@@ -160,17 +169,17 @@ class Crawler:
 				print("[WARNING] We aren't allowed to fetch the url %s" % self.url, file=self.logstream)
 
 		# We save the data parse
-		with open(str(time())+'.json', 'w') as f:
+		with open('%s_%s.json' % (self.conn.host, time()), 'w') as f:
 			json.dump(self.results, f)
 
 if __name__ == '__main__':
 	parser = ArgumentParser()
 	parser.add_argument('HOST', help='Eg: http://example.com')
-	parser.add_argument('-t', type=float, default=10, help='It represent the timeout')
-	parser.add_argument('-d', type=float, default=1, help='This delay will be used if no delay specified by the robots.txt')
+	parser.add_argument('-t', '--timeout', type=float, default=2, help='It represent the timeout')
+	parser.add_argument('-s', '--delay', type=float, default=1, help='This delay will be used if no delay specified by the robots.txt')
 	args = parser.parse_args()
 	Crawler(
 		args.HOST,
-		timeout=args.t,
-		delay=args.d,
+		timeout=args.timeout,
+		delay=args.delay,
 	).start()
