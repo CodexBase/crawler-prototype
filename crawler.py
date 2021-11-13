@@ -9,6 +9,8 @@ from random import randint
 from argparse import ArgumentParser
 import json
 import urllib.robotparser
+import sqlite3
+import datetime
 
 class Crawler:
 	"""
@@ -44,8 +46,11 @@ class Crawler:
 		# Output file of the logging
 		self.logstream = open('%s_%s.log' % (self.conn.host, time()), 'a')
 		self.logstream.write('HOST: %s\n' % self.conn.host)
-		self.results = {}
-
+		
+		# Output of results
+		self.db_conn = sqlite3.connect('%s_%s.sqlite3'%(self.conn.host, time()))
+		self.db_conn.execute("CREATE TABLE IF NOT EXISTS webpages (id INTEGER PRIMARY KEY AUTOINCREMENT, host VARCHAR(255), url VARCHAR(255), data TEXT, period TIMESTAMP)")
+		self.to_ignore = []
 	# This method permit to read the sitemaps and get the urls inside
 	def getUrlFromSiteMap(self):
 		for sitemap in self.ROBOT_PARSER.sitemaps:
@@ -157,20 +162,21 @@ class Crawler:
 			self.url = self.url_to_crawl.pop(0)
 
 			# We verify if url not already used or not empty
-			if not self.url or self.url in self.results:
-				continue
+			if not self.url or self.url in self.to_ignore:
+				continue	# This method permit to get the u
 			# We verify if our robot can is allowed to fetch this url
 			elif self.ROBOT_PARSER.can_fetch(self.USER_AGENT, self.url):
 				print('[DEBUG] Crawling launched on %s ...' % self.url, file=self.logstream)
 				self.getContent()
-				self.results[self.url] = self.getData()
+				# We save the data
+				self.db_conn.execute(
+					"INSERT INTO webpages (id, host, url, data, period) VALUES (?, ?, ?, ?, ?)",
+					(None, self.conn.host, self.url, self.getData(), datetime.datetime.now())
+				)
+				self.db_conn.commit()
 				self.getUrlLinks()
 			else:
 				print("[WARNING] We aren't allowed to fetch the url %s" % self.url, file=self.logstream)
-
-		# We save the data parse
-		with open('%s_%s.json' % (self.conn.host, time()), 'w') as f:
-			json.dump(self.results, f)
 
 if __name__ == '__main__':
 	parser = ArgumentParser()
